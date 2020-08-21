@@ -6,7 +6,7 @@ services:
     restart: always
     ports:
       - "3100:8080"
-  db:
+  mysql:
     image: mysql:5.6
     container_name: mysql
     command: --default-authentication-plugin=mysql_native_password
@@ -25,7 +25,6 @@ services:
     environment:
       - RABBITMQ_DEFAULT_USER=admin
       - RABBITMQ_DEFAULT_PASS=admin
-
 
   adminer:
     image: adminer
