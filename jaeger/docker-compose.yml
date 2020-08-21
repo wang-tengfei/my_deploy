@@ -1,0 +1,69 @@
+version: "3.3"
+
+services:
+  jaeger-agent:
+    image: jaegertracing/jaeger-agent:1.11
+    ports:
+      - "5775:5775/udp"
+      - "6831:6831/udp"
+      - "6832:6832/udp"
+      - "5778:5778"
+    environment:
+      - LOG_LEVEL=debug
+    hostname: jaeger-agent
+    command: ["--reporter.tchannel.host-port=jaeger-collector-1:14267,jaeger-collector-2:14267"]
+    networks:
+      - jeager
+
+  jaeger-collector-1:
+    image: jaegertracing/jaeger-collector:1.11
+    restart: on-failure
+    ports:
+      - "14267:14267"
+      - "14268:14268"
+      - "14269:14269"
+    environment:
+      - LOG_LEVEL=debug
+      - SPAN_STORAGE_TYPE=elasticsearch
+    networks:
+      - jeager
+    command: ["--span-storage.type=elasticsearch", "--es.server-urls=http://172.17.0.1:9200"]
+
+  jaeger-collector-2:
+    image: jaegertracing/jaeger-collector:1.11
+    restart: on-failure
+    ports:
+      - "15267:14267"
+      - "15268:14268"
+      - "15269:14269"
+    environment:
+      - LOG_LEVEL=debug
+      - SPAN_STORAGE_TYPE=elasticsearch
+    networks:
+      - jeager
+    command: ["--span-storage.type=elasticsearch", "--es.server-urls=http://172.17.0.1:9200"]
+
+  jaeger-query:
+    image: jaegertracing/jaeger-query:1.11
+    restart: on-failure
+    ports:
+      - "16686:16686"
+      - "16687:16687"
+    networks:
+      - jeager
+    volumes:
+    - ./config/jaeger-ui.json:/config/jaeger-ui.json
+    command: ["--span-storage.type=elasticsearch", "--es.server-urls=http://172.17.0.1:9200", "--query.ui-config=/config/jaeger-ui.json"]
+
+  jaeger-example:
+    image: "jaegertracing/example-hotrod:1.11"
+    ports:
+      - "8100:8080"
+      #- "8083:8083"
+    environment:
+      - JAEGER_AGENT_HOST=jaeger-agent 
+    networks:
+      - jeager
+
+networks:
+  jeager:

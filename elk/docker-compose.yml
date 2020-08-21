@@ -1,0 +1,50 @@
+version: "3.3"
+
+services:
+  elasticsearch:
+    image: elasticsearch:5.6.13-alpine
+    restart: always
+    ports:
+      - "9200:9200"
+      - "9300:9300"
+    networks:
+      - efknet
+    volumes:
+      - ./esdata:/usr/share/elasticasearch/data
+    environment:
+      - ES_JAVA_OPTS=-Xms512m -Xmx512m
+      - cluster.name=elasticsearch-01
+
+  kibana:
+    image: kibana:5.6.13
+    restart: always
+    ports:
+      - "5601:5601"
+    environment:
+      - ELASTICSEARCH_URL=http://elasticsearch:9200
+    networks:
+      - efknet
+    depends_on:
+      - elasticsearch
+    extra_hosts:
+      - "elasticsearch:172.17.0.1"
+
+  logstash:
+    image: logstash:5.6.13-alpine
+    restart: always
+    ports:
+      - "4567:4567"
+    networks:
+      - efknet
+    volumes:
+      - ./logstash/config/logstash.conf:/config/logstash.conf
+      - ./log:/tmp
+    command: logstash -f /config/logstash.conf
+    #&& logstash-plugin install logstash-codec-json_lines
+    depends_on:
+      - elasticsearch
+    extra_hosts:
+      - "elasticsearch:172.17.0.1"
+
+networks:
+  efknet:
